@@ -1,0 +1,29 @@
+---
+- name: Create application with ArgoCD
+  shell: /usr/local/bin/argocd --insecure --grpc-web login $(oc --context cluster1 -n argocd get route argocd-server -o jsonpath="{.status.ingress[*].host}{\"\n\"}"):443 --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; argocd app create --project default --name {{ item }}-pacman --repo http://$(oc --context cluster1 -n gogs get route gogs -o jsonpath='{.spec.host}')/student/federation-dev.git --path labs/lab-7-assets/overlays/{{ item }} --dest-server $(argocd cluster list | grep {{ item }} | awk '{print $1}') --dest-namespace pacman --revision master --sync-policy automated
+  args:
+    chdir: "{{ var_user_homepath }}"
+  become: true
+  become_user: "{{ _clientvm_student_user }}"
+  loop: "{{ var_cluster_list }}"
+
+- name: Check pacman deployment progress
+  shell: /usr/local/bin/argocd --insecure --grpc-web login $(oc --context cluster1 -n argocd get route argocd-server -o jsonpath="{.status.ingress[*].host}{\"\n\"}"):443 --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; wait-for-argo-app cluster1-pacman; argocd app sync cluster1-pacman; wait-for-argo-app cluster2-pacman; argocd app sync cluster2-pacman; wait-for-argo-app cluster3-pacman; argocd app sync cluster3-pacman
+  args:
+    chdir: "{{ var_user_homepath }}"
+  become: true
+  become_user: "{{ _clientvm_student_user }}"
+
+- name: Validate the pacman namespaces
+  shell: /usr/local/bin/argocd --insecure --grpc-web login $(oc --context cluster1 -n argocd get route argocd-server -o jsonpath="{.status.ingress[*].host}{\"\n\"}"):443 --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; for i in cluster1 cluster2 cluster3; do oc get namespace pacman --context $i; done
+  args:
+    chdir: "{{ var_user_homepath }}"
+  become: true
+  become_user: "{{ _clientvm_student_user }}"
+
+- name: Wait for the deployment to become ready
+  shell: /usr/local/bin/argocd --insecure --grpc-web login $(oc --context cluster1 -n argocd get route argocd-server -o jsonpath="{.status.ingress[*].host}{\"\n\"}"):443 --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; for cluster in cluster1 cluster2 cluster3; do wait-for-deployment $cluster pacman pacman;done
+  args:
+    chdir: "{{ var_user_homepath }}"
+  become: true
+  become_user: "{{ _clientvm_student_user }}"
