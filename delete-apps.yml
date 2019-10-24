@@ -6,7 +6,7 @@
   tasks: 
 
     - name: Delete apps from ArgoCD
-      shell: /usr/local/bin/argocd --insecure --grpc-web login {{ _argocd_url }}  --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; argocd app delete --name {{ item }}-edge-factory 
+      shell: /usr/local/bin/argocd --insecure --grpc-web login {{ _argocd_url }}  --username {{ _argocd_default_user }} --password {{ _argocd_default_user_password }}; argocd app delete {{ item }}-edge-factory 
       args:
         chdir: "{{ var_user_homepath }}"
       loop: "{{ var_cluster_list }}"
