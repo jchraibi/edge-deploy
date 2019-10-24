@@ -16,5 +16,6 @@ spec:
       containers:
       - image: quay.io/jchraibi/tasks-app:stage
         name: tasks-app
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
